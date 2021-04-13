@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { IProducts, IUser } from "../../types";
 import { Product } from "../../models";
-import { UploadImage } from "../../services";
 import { AppError, asyncHandler } from "../../utils";
+import { UploadImage } from "../../services";
 import User from "../../models/User";
+import { IProducts } from "../../types";
 
 /**
  * @desc Create Product
@@ -13,7 +13,7 @@ import User from "../../models/User";
 
 export const CreateProduct = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		let {
+		const {
 			name,
 			description,
 			brand,
@@ -22,21 +22,17 @@ export const CreateProduct = asyncHandler(
 			likes,
 			// image,
 			tags,
-		}: IProducts = req.body;
+		}: IProducts = req?.body;
 
-		//@ts-ignore
-		const image = req.files;
+		const image = req?.files;
 
-		// console.log("request body --->", req.body);
 		console.log("request body --->", req);
-		// @ts-ignore
-
 		console.log("request file --->", req.files);
 
 		const imgLink = await UploadImage(image);
 
 		//@ts-ignore
-		// tags = tags.split(",").map((tag: string) => tag.trim());
+		const tag = tags?.split(",").map((tag: string) => tag.trim());
 
 		let product = new Product({
 			name,
@@ -46,7 +42,7 @@ export const CreateProduct = asyncHandler(
 			price,
 			likes,
 			image: imgLink,
-			// tags,
+			tags: tag,
 		});
 
 		await product.save();
@@ -66,20 +62,18 @@ export const CreateProduct = asyncHandler(
 
 export const GetAllProducts = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		// const products = await Product.find({});
-		// const products = await Product.find({ active: true });
 		const products = await Product.find({ active: true }).sort({
 			createdAt: -1,
 		});
-		if (products.length) {
-			res.status(200).json({
-				total: products.length,
-				status: "success",
-				data: products,
-			});
-		} else {
-			next(new AppError(404, "No product available at the moment"));
-		}
+
+		if (!products?.length)
+			return next(new AppError(404, "No product available at the moment"));
+
+		res.status(200).json({
+			total: products?.length,
+			status: "success",
+			data: products,
+		});
 	}
 );
 
@@ -99,30 +93,29 @@ export const UpdateProduct = asyncHandler(
 			price,
 			image,
 			tags,
-		}: IProducts = req.body;
+		}: IProducts = req?.body;
 
-		const product = await Product.findById(req.params.id);
+		const product = await Product.findById(req?.params?.id);
+
+		if (!product) return next(new AppError(404, "Product not Found"));
 
 		//@ts-ignore
 		const imgLink: string = await UploadImage(image);
 
-		if (product) {
-			product.name = name;
-			product.description = description;
-			product.brand = brand;
-			product.quantityInStock = quantityInStock;
-			product.price = price;
-			product.image = imgLink;
-			product.tags = tags;
+		product.name = name;
+		product.description = description;
+		product.brand = brand;
+		product.quantityInStock = quantityInStock;
+		product.price = price;
+		product.image = imgLink;
+		product.tags = tags;
 
-			const updatedProduct = await product.save();
-			res.status(201).json({
-				status: "updated",
-				data: updatedProduct,
-			});
-		} else {
-			next(new AppError(404, "Product not Found"));
-		}
+		const updatedProduct = await product.save();
+
+		res.status(201).json({
+			status: "updated",
+			data: updatedProduct,
+		});
 	}
 );
 
@@ -134,16 +127,14 @@ export const UpdateProduct = asyncHandler(
 
 export const DeleteProduct = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const product = await Product.findById(req.params.id);
+		const product = await Product.findById(req?.params?.id);
 
-		if (product) {
-			await product.remove();
-			res.status(200).json({
-				status: "product removed",
-			});
-		} else {
-			next(new AppError(500, "Unable to resolve request"));
-		}
+		if (!product) return next(new AppError(500, "Unable to resolve request"));
+
+		await product.remove();
+		res.status(200).json({
+			status: "product removed",
+		});
 	}
 );
 
@@ -155,7 +146,12 @@ export const DeleteProduct = asyncHandler(
 
 export const DisableProduct = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		await Product.findByIdAndUpdate(req.params.id, { active: false });
+		const product = await Product.findById(req?.params?.id);
+		if (!product) return next(new AppError(500, "Unable to resolve request"));
+
+		product.active = false;
+		await product.save();
+
 		res.status(200).json({
 			status: "success",
 			message: "product successfully disabled",
@@ -171,43 +167,38 @@ export const DisableProduct = asyncHandler(
 
 export const ReviewProduct = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		//  hello
-		const { review } = req.body;
+		const { review } = req?.body;
 
-		const product = await Product.findById(req.params.id);
+		const product = await Product.findById(req?.params?.id);
+		if (!product) return next(new AppError(404, "Product not found"));
 
-		if (product) {
+		//@ts-ignore
+		const alreadyReviewed = product?.reviews?.find(
 			//@ts-ignore
-			const alreadyReviewed = product.reviews.find(
-				//@ts-ignore
-				(r: any) => r.user.toString() === req?.user.id.toString()
-			);
+			(r: any) => r?.user?.toString() === req?.user?.id?.toString()
+		);
 
-			if (alreadyReviewed) {
-				next(new AppError(400, "You can't review a product twice"));
-			}
-
-			//@ts-ignore
-			const user = await User.findById(req.user.id).select("firstName avatar");
-
-			const reviews = {
-				name: user?.firstName,
-				avatar: user?.avatar,
-				review,
-				user,
-			};
-
-			//@ts-ignore
-			product.reviews.push(reviews);
-
-			await product.save();
-			res.status(201).json({
-				status: "success",
-				message: "review successfully added",
-			});
-			///
-		} else {
-			next(new AppError(404, "Product not found"));
+		if (alreadyReviewed) {
+			next(new AppError(400, "You can't review a product twice"));
 		}
+
+		//@ts-ignore
+		const user = await User.findById(req?.user?.id).select("firstName avatar");
+
+		const reviews = {
+			name: user?.firstName,
+			avatar: user?.avatar,
+			review,
+			user,
+		};
+
+		//@ts-ignore
+		product.reviews.push(reviews);
+
+		await product.save();
+		res.status(201).json({
+			status: "success",
+			message: "review successfully added",
+		});
 	}
 );

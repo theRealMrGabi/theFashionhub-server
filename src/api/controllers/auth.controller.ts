@@ -14,7 +14,7 @@ import { AppError, generateToken, asyncHandler } from "../../utils";
 
 export const SignupUser = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const { email, firstName, lastName, password, role }: IUser = req.body;
+		const { email, firstName, lastName, password, role }: IUser = req?.body;
 
 		let user = await User.findOne({ email });
 		if (user) return next(new AppError(400, "Unable to resolve request"));
@@ -67,7 +67,7 @@ export const SignupUser = asyncHandler(
  */
 export const LoginUser = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const { email, password }: ILogin = req.body;
+		const { email, password }: ILogin = req?.body;
 
 		const user = await User.findOne({ email });
 
@@ -97,23 +97,22 @@ export const UpdatePassword = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	let { currentPassword, newPassword }: passwordProps = req.body;
+	let { currentPassword, newPassword }: passwordProps = req?.body;
 
-	delete req.body.confirmPassword;
+	delete req?.body?.confirmPassword;
 
 	try {
 		//@ts-ignore
-		const user: IUser = await User.findById(req.user.id);
+		const user: IUser = await User.findById(req?.user?.id);
 
-		const validPassword = await bcrypt.compare(currentPassword, user.password);
+		const validPassword = await bcrypt.compare(currentPassword, user?.password);
 
-		if (!validPassword)
-			return next(new AppError(406, "Invalid Password Credentials"));
+		if (!validPassword) return next(new AppError(406, "Invalid Credentials"));
 
 		let password = await bcrypt.hash(newPassword, 12);
 
 		//@ts-ignore
-		await User.findByIdAndUpdate(user.id, password, {
+		await User.findByIdAndUpdate(user?.id, password, {
 			new: true,
 			runValidators: true,
 		});
@@ -142,7 +141,7 @@ export const GetAllUsers = asyncHandler(
 		if (!user) return next(new AppError(404, "No user exist at the moment"));
 
 		res.status(200).json({
-			total: user.length,
+			total: user?.length,
 			status: "success",
 			data: user,
 		});
@@ -157,7 +156,7 @@ export const GetAllUsers = asyncHandler(
 export const GetUserById = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		//@ts-ignore
-		const user: IUser = await User.findById(req.user.id).select(
+		const user: IUser = await User.findById(req?.user?.id).select(
 			"-password -role"
 		);
 		if (!user) return next(new AppError(404, "User not found"));

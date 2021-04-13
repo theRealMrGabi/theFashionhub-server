@@ -1,7 +1,6 @@
-import { Product } from "./../../models/Product";
 import { Request, Response, NextFunction } from "express";
-import { IProducts, ICart, IOrders } from "../../types";
 import { AppError, asyncHandler } from "../../utils";
+import { IOrders } from "../../types";
 import { Orders } from "../../models";
 
 /**
@@ -26,31 +25,29 @@ export const CreateOrder = asyncHandler(
 			paidAt,
 		}: IOrders = req.body;
 
-		if (cartItems?.length) {
-			next(new AppError(404, "No items in cart"));
-		} else {
-			const order = new Orders({
-				//@ts-ignore
-				user: req.user.id,
-				cartItems,
-				totalPrice,
-				address,
-				status,
-				isDelivered,
-				deliveredAt,
-				shippingCost,
-				isPaid,
-				paymentMethod,
-				paidAt,
-			});
+		if (!cartItems?.length) return next(new AppError(404, "No items in cart"));
 
-			await order.save();
+		const order = new Orders({
+			//@ts-ignore
+			user: req?.user?.id,
+			cartItems,
+			totalPrice,
+			address,
+			status,
+			isDelivered,
+			deliveredAt,
+			shippingCost,
+			isPaid,
+			paymentMethod,
+			paidAt,
+		});
 
-			res.status(201).json({
-				status: "success",
-				data: order,
-			});
-		}
+		await order.save();
+
+		res.status(201).json({
+			status: "success",
+			data: order,
+		});
 	}
 );
 
@@ -64,11 +61,11 @@ export const GetAllOrders = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const orders = await Orders.find({}).sort({ createdAt: -1 });
 
-		if (!orders.length)
+		if (!orders?.length)
 			return next(new AppError(404, "No orders available at the moment"));
 
 		res.status(200).json({
-			total: orders.length,
+			total: orders?.length,
 			status: "success",
 			data: orders,
 		});
@@ -83,7 +80,7 @@ export const GetAllOrders = asyncHandler(
 
 export const GetOrderById = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const order = await Orders.findById(req.params.id);
+		const order = await Orders.findById(req?.params?.id);
 
 		if (!order) return next(new AppError(404, "Order doesn't exist"));
 
@@ -104,7 +101,7 @@ export const GetOrderById = asyncHandler(
 export const GetSingleUserOrders = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		//@ts-ignore
-		const order = await Orders.findById(req.user.id);
+		const order = await Orders.findById(req?.user?.id);
 
 		if (!order) return next(new AppError(404, "You are yet to make an order"));
 
@@ -123,10 +120,14 @@ export const GetSingleUserOrders = asyncHandler(
  */
 export const CancelOrder = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		await Product.findByIdAndUpdate(req.params.id, {
-			isCancelled: true,
-			status: "Cancelled",
-		});
+		const order = await Orders.findById(req?.params?.id);
+
+		if (!order) return next(new AppError(404, "Order not found"));
+
+		order.isCancelled = true;
+		order.status = "Cancelled";
+
+		await order?.save();
 
 		res.status(200).json({
 			status: "success",
@@ -142,9 +143,12 @@ export const CancelOrder = asyncHandler(
  */
 export const AcceptOrder = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		await Product.findByIdAndUpdate(req.params.id, {
-			status: "Accepted",
-		});
+		const order = await Orders.findById(req?.params?.id);
+
+		if (!order) return next(new AppError(404, "Order not found"));
+
+		order.status = "Accepted";
+		await order?.save();
 
 		res.status(200).json({
 			status: "success",
@@ -160,23 +164,16 @@ export const AcceptOrder = asyncHandler(
  */
 export const DeliveryStatus = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const order = await Orders.findById(req.params.id);
+		const order = await Orders.findById(req?.params?.id);
+		if (!order) return next(new AppError(404, "Order not found"));
 
-		if (order) {
-			(order.status = "Delivered"), (order.isDelivered = true);
-			// (order.deliveredAt = Date.now());
-		} else {
-			next(new AppError(404, "Order not found"));
-		}
+		order.status = "Delivered";
+		order.isDelivered = true;
+		order.deliveredAt = Date.now();
 
 		const deliveredOrder = await order?.save();
-		// await Orders.findByIdAndUpdate(req.params.id, {
-		// 	status: "Delivered",
-		// 	isDelivered: true,
-		// 	deliveredAt: Date.now(),
-		// });
 
-		res.status(200).json({
+		res.status(201).json({
 			status: "success",
 			message: "Order successfully delivered",
 			data: deliveredOrder,

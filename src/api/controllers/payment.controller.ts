@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import config from "../../config";
-const stripe = require("stripe")(config.STRIPE_SECRET_KEY);
 import { AppError, asyncHandler } from "../../utils";
+
+const stripe = require("stripe")(config.STRIPE_SECRET_KEY);
 
 /**
  * @desc Create Stripe Checkout

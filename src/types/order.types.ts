@@ -16,7 +16,7 @@ export interface IOrders extends Document {
 	status: string;
 	isCancelled: boolean;
 	isDelivered: boolean;
-	deliveredAt: Date;
+	deliveredAt: Date | number | string;
 	shippingCost: number;
 	isPaid: boolean;
 	paymentMethod: string;

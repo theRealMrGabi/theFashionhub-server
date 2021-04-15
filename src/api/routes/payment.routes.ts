@@ -6,5 +6,5 @@ const route = Router();
 
 export default (app: Router) => {
 	app.use("/payment", route);
-	route.post("/stripe", Auth, PayWithStripe);
+	route.post("/checkout", Auth, PayWithStripe);
 };

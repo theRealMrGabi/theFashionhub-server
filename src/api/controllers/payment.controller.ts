@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import config from "../../config";
 import { AppError, asyncHandler } from "../../utils";
+import logger from "../../loaders/logger";
 
 const stripe = require("stripe")(config.STRIPE_SECRET_KEY);
 
@@ -20,10 +21,10 @@ export const PayWithStripe = asyncHandler(
 
 		stripe.charges.create(body, (stripeErr: any, stripeRes: any) => {
 			if (stripeErr) {
-				next(new AppError(500, stripeErr));
-			} else {
-				res.status(200).send({ success: stripeRes });
+				logger.error(stripeErr);
+				return next(new AppError(500, stripeErr));
 			}
+			res.status(200).send({ success: stripeRes });
 		});
 	}
 );

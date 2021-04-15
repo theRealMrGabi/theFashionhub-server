@@ -20,14 +20,13 @@ export const CreateProduct = asyncHandler(
 			quantityInStock,
 			price,
 			likes,
-			// image,
+			image,
 			tags,
 		}: IProducts = req?.body;
 
-		const image = req?.files;
-
-		console.log("request body --->", req);
-		console.log("request file --->", req.files);
+		// const image = req?.files;
+		// console.log("request body --->", req);
+		// console.log("request file --->", req.files);
 
 		const imgLink = await UploadImage(image);
 

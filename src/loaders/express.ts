@@ -6,12 +6,13 @@ import { globalErrorHandler } from "../utils";
 import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
 import fileUpload from "express-fileupload";
+import cors from "cors";
 
 /** Express Startup Files */
 export default ({ app }: { app: Application }) => {
 	// app.use(express.json());
 	// app.use(express.urlencoded({ extended: false }));
-
+	app.use(cors());
 	app.use(helmet());
 
 	app.use(fileUpload());

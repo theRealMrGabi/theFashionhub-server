@@ -85,7 +85,6 @@ export const GetOrderById = asyncHandler(
 		if (!order) return next(new AppError(404, "Order doesn't exist"));
 
 		res.status(200).json({
-			total: order,
 			status: "success",
 			data: order,
 		});
@@ -106,7 +105,6 @@ export const GetSingleUserOrders = asyncHandler(
 		if (!order) return next(new AppError(404, "You are yet to make an order"));
 
 		res.status(200).json({
-			total: order,
 			status: "success",
 			data: order,
 		});

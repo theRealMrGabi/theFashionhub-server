@@ -76,6 +76,19 @@ export const GetAllProducts = asyncHandler(
 	}
 );
 
+export const GetProductById = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const product = await Product.findById(req?.params?.id);
+
+		if (!product) return next(new AppError(404, "Product doesn't exist"));
+
+		res.status(200).json({
+			status: "success",
+			data: product,
+		});
+	}
+);
+
 /**
  * @desc Update Product
  * @route PUT /api/v1/product/:id

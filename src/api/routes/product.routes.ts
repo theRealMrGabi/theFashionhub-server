@@ -7,6 +7,7 @@ import {
 	DeleteProduct,
 	DisableProduct,
 	ReviewProduct,
+	GetProductById,
 } from "../controllers";
 import { ProductReviewValidator, ProductValidator } from "../../validators";
 
@@ -15,6 +16,7 @@ const route = Router();
 export default (app: Router) => {
 	app.use("/product", route);
 	route.get("/", GetAllProducts);
+	route.get("/:id", GetProductById);
 	route.post(
 		"/",
 		Auth,

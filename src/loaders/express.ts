@@ -25,11 +25,18 @@ export default ({ app }: { app: Application }) => {
 		},
 	};
 
+	// app.use(cors());
+	// app.options("*", cors(corsOptions));
+	app.use(cors({ origin: true, credentials: false }));
+	//@ts-ignore
+	app.options("*", cors(corsOptions));
+	// app.options("*", cors());
 	app.use(helmet());
 
 	app.use(fileUpload());
-	app.use(express.json({ limit: "60mb" }));
-	app.use(express.urlencoded({ limit: "60mb", extended: true }));
+
+	app.use(express.json({ limit: "200mb" }));
+	app.use(express.urlencoded({ extended: true }));
 
 	/** Sanitize data input against NoSql query injection */
 	app.use(mongoSanitize());
@@ -37,6 +44,7 @@ export default ({ app }: { app: Application }) => {
 	/** prevent against parameter pollution */
 	app.use(hpp());
 
-	app.use(config.api.prefix, cors(corsOptions), routes());
+	// app.use(config.api.prefix, cors(corsOptions), routes());
+	app.use(config.api.prefix, routes());
 	app.use(globalErrorHandler);
 };

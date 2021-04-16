@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import routes from "../api";
 import config from "../config";
 import helmet from "helmet";
-import { globalErrorHandler } from "../utils";
+import { AppError, globalErrorHandler } from "../utils";
 import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
 import fileUpload from "express-fileupload";
@@ -12,7 +12,19 @@ import cors from "cors";
 export default ({ app }: { app: Application }) => {
 	// app.use(express.json());
 	// app.use(express.urlencoded({ extended: false }));
-	app.use(cors());
+
+	const whitelist = ["localhost", "https://thefashionhub.netlify.app"];
+
+	const corsOptions = {
+		origin: function (origin: any, callback: any) {
+			if (whitelist.indexOf(origin) !== -1) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
+	};
+
 	app.use(helmet());
 
 	app.use(fileUpload());
@@ -25,6 +37,6 @@ export default ({ app }: { app: Application }) => {
 	/** prevent against parameter pollution */
 	app.use(hpp());
 
-	app.use(config.api.prefix, routes());
+	app.use(config.api.prefix, cors(corsOptions), routes());
 	app.use(globalErrorHandler);
 };
